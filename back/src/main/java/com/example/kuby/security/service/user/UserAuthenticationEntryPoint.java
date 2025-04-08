@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class UserAuthenticationEntryPoint implements AuthenticationEntryPoint {
-    @Value("${frontend.url}")
-    private String frontEndUrl;
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {

@@ -1,19 +1,15 @@
 package com.example.kuby.security.controller;
 
 import com.example.kuby.exceptions.BasicException;
-import com.example.kuby.foruser.CustomUserDetails;
 import com.example.kuby.foruser.UserEntity;
 import com.example.kuby.security.models.enums.Provider;
-import com.example.kuby.security.models.request.ChangePasswordRequest;
 import com.example.kuby.security.models.request.LoginRequest;
 import com.example.kuby.security.models.request.SignUpRequest;
 import com.example.kuby.security.models.tokens.TokenPair;
 import com.example.kuby.security.ratelimiter.WithRateLimitProtection;
 import com.example.kuby.security.service.jwt.JwtGeneratorService;
 import com.example.kuby.security.service.user.UserAuthService;
-import com.example.kuby.security.util.annotations.validators.email.EmailExists;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,23 +35,23 @@ public class UserAuthController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/verify/local")
-    @WithRateLimitProtection
-    public ResponseEntity<Void> verifyEmail(@RequestParam String code, @RequestParam String email) {
+//    @PostMapping("/verify")
+//    @WithRateLimitProtection
+//    public ResponseEntity<Void> verifyEmail(@RequestParam String code, @RequestParam String email) {
+//
+//        userAuthService.verifyUserAccount(code, email);
+//
+//        return ResponseEntity.ok().build();
+//    }
 
-        userAuthService.verifyUserAccount(code, email);
-
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/resend-submission-link")
-    @WithRateLimitProtection(rateLimit = 3, rateDuration = 180_000)
-    public ResponseEntity<Void> submitEmail(@RequestParam @Valid @Email @EmailExists String email) {
-
-        userAuthService.sendMailWithAccountSubmissionLink(email);
-
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
+//    @PostMapping("/resend-submission-link")
+//    @WithRateLimitProtection(rateLimit = 3, rateDuration = 180_000)
+//    public ResponseEntity<Void> submitEmail(@RequestParam @Valid @Email @EmailExists String email) {
+//
+//        userAuthService.sendMailWithAccountSubmissionLink(email);
+//
+//        return new ResponseEntity<>(HttpStatus.OK);
+//    }
 
     @PostMapping("/login")
     @WithRateLimitProtection
@@ -86,21 +82,21 @@ public class UserAuthController {
                 .header("X-Refresh-Token", tokenPair.getRefreshTokenValue())
                 .build();
     }
-    @PostMapping("/change-password")
-    @WithRateLimitProtection
-    public ResponseEntity<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
+//   w @PostMapping("/change-password")
+//    @WithRateLimitProtection
+//    public ResponseEntity<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
+//
+//        userAuthService.cachePasswordAndSendPasswordChangeSubmissionLink(request.getEmail(), request.getPassword());
+//
+//        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+//    }
 
-        userAuthService.cachePasswordAndSendPasswordChangeSubmissionLink(request.getEmail(), request.getPassword());
-
-        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
-    }
-
-    @PostMapping("/submit-password-change")
-    @WithRateLimitProtection
-    public ResponseEntity<Void> submitPasswordChange(@RequestParam String code, @RequestParam String email) {
-
-        userAuthService.submitPasswordChange(email,code);
-
-        return ResponseEntity.ok().build();
-    }
+//    @PostMapping("/submit-password-change")
+//    @WithRateLimitProtection
+//    public ResponseEntity<Void> submitPasswordChange(@RequestParam String code, @RequestParam String email) {
+//
+//        userAuthService.submitPasswordChange(email,code);
+//
+//        return ResponseEntity.ok().build();
+//    }
 }

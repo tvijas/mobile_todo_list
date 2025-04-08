@@ -1,9 +1,6 @@
 package com.example.kuby.security.config;
 
 import com.example.kuby.security.filter.JwtAuthFilter;
-import com.example.kuby.security.service.user.CustomOAuth2UserService;
-import com.example.kuby.security.service.user.OauthFailureHandler;
-import com.example.kuby.security.service.user.OauthSuccessHandler;
 import com.example.kuby.security.service.user.UserAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -28,10 +25,7 @@ public class SecurityFilterConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthFilter jwtAuthFilter,
-            CustomOAuth2UserService oauthUserService,
-            UserAuthenticationEntryPoint userAuthenticationEntryPoint,
-            OauthFailureHandler oauthFailureHandler,
-            OauthSuccessHandler oauthSuccessHandler
+            UserAuthenticationEntryPoint userAuthenticationEntryPoint
     ) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -55,12 +49,6 @@ public class SecurityFilterConfig {
                                     .anyRequest().authenticated();
                         }
                 )
-                .oauth2Login(auth -> {
-                    auth.userInfoEndpoint(uiepc ->
-                            uiepc.userService(oauthUserService));
-                    auth.successHandler(oauthSuccessHandler);
-                    auth.failureHandler(oauthFailureHandler);
-                })
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(httpSecurityExceptionHandlingConfigurer ->
                         httpSecurityExceptionHandlingConfigurer.authenticationEntryPoint(userAuthenticationEntryPoint))

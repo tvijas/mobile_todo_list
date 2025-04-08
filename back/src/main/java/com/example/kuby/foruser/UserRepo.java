@@ -17,7 +17,6 @@ import java.util.UUID;
 public interface UserRepo extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByEmailAndProvider(String email, Provider provider);
     Boolean existsByEmailAndProvider(String email, Provider provider);
-    Optional<UserEntity> findByProviderIdAndProvider(String ProviderId, Provider provider);
     @Modifying
     @Transactional
     @Query("UPDATE UserEntity u SET u.isEmailSubmitted = true WHERE u.email = :email AND u.provider = :provider")

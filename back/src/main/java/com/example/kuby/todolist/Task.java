@@ -31,10 +31,4 @@ public class Task {
     private boolean isFinished;
     @Column(nullable = false)
     private boolean isExpired;
-
-    @PrePersist
-    @PreUpdate
-    private void prePersist() {
-        setExpired(!deadLine.isAfter(LocalDateTime.now()));
-    }
 }

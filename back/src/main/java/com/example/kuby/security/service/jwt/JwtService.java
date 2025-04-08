@@ -1,28 +1,18 @@
 package com.example.kuby.security.service.jwt;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.kuby.security.blacklist.BlacklistService;
 import com.example.kuby.exceptions.BasicException;
 import com.example.kuby.foruser.UserEntity;
 import com.example.kuby.security.models.entity.tokens.AccessToken;
 import com.example.kuby.security.models.entity.tokens.RefreshToken;
 import com.example.kuby.security.models.entity.tokens.Tokens;
-import com.example.kuby.security.models.enums.TokenActionType;
 import com.example.kuby.security.repos.token.TokensRepo;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 @Service

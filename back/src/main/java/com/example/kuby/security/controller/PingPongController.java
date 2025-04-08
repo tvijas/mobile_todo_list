@@ -9,7 +9,6 @@ public class PingPongController {
 
     @PostMapping
     public ResponseEntity<Void> testing(){
-
         return ResponseEntity.noContent().build();
     }
 }

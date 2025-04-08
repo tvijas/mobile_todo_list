@@ -20,15 +20,15 @@ import java.util.concurrent.TimeUnit;
 public class RateLimitAspect {
     private final StringRedisTemplate redisTemplate;
 
-    @Value("${frontend.server.ip}")
-    private String FRONTEND_SERVER_IP;
+//    @Value("${frontend.server.ip}")
+//    private String FRONTEND_SERVER_IP;
 
     private static final String RATE_LIMIT_PREFIX = "ratelimit:";
 
     @Before("@annotation(withRateLimitProtection)")
     public void rateLimit(WithRateLimitProtection withRateLimitProtection) {
         String ipAddress = getClientIpAddress();
-        if (ipAddress.equals(FRONTEND_SERVER_IP)) return;
+//        if (ipAddress.equals(FRONTEND_SERVER_IP)) return;
 
         String endpointIdentifier = getEndpointIdentifier();
         String redisKey = RATE_LIMIT_PREFIX + endpointIdentifier + ":" + ipAddress;

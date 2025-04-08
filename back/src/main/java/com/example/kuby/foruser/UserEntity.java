@@ -23,8 +23,7 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users", indexes = {
-        @Index(name = "users_provider_email_idx", columnList = "provider, email"),
-        @Index(name = "users_provider_provider_id_idx", columnList = "provider, provider_id")
+        @Index(name = "users_provider_email_idx", columnList = "provider, email")
 })
 public class UserEntity implements CustomUserDetails, Serializable {
     @Id
@@ -36,7 +35,6 @@ public class UserEntity implements CustomUserDetails, Serializable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Provider provider;
-    private String providerId;
     private LocalDateTime lastActiveDate;
     private LocalDateTime registrationDate;
     @Column(columnDefinition = "BOOLEAN DEFAULT false", nullable = false)

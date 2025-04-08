@@ -20,6 +20,9 @@ public class TaskService {
     private final Mapper mapper;
 
     public TaskDTO create(String name, UUID userId, LocalDateTime deadLine, boolean isFinished) {
+        if (!deadLine.isAfter(LocalDateTime.now()))
+            throw new BasicException(Map.of("deadline", "Deadline cannot be before current time"), HttpStatus.BAD_REQUEST);
+
         return mapper.convertTaskToDTO(taskRepo.save(Task.builder()
                 .name(name)
                 .creator(UserEntity.builder()
@@ -44,8 +47,11 @@ public class TaskService {
 
         if (name != null)
             task.setName(name);
-        if (deadLine != null)
+        if (deadLine != null) {
+            if (!deadLine.isAfter(LocalDateTime.now()))
+                throw new BasicException(Map.of("deadline", "Deadline cannot be before current time"), HttpStatus.BAD_REQUEST);
             task.setDeadLine(deadLine);
+        }
 
         return mapper.convertTaskToDTO(taskRepo.save(task));
     }

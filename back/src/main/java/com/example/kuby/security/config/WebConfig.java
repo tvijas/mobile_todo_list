@@ -10,8 +10,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    @Value("${frontend.url}")
-    public String frontendUrl;
+//    @Value("${frontend.url}")
+//    public String frontendUrl;
 
     @Bean
     public CorsFilter corsFilter() {
