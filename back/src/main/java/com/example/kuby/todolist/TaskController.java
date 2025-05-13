@@ -1,7 +1,6 @@
 package com.example.kuby.todolist;
 
 import com.example.kuby.foruser.UserEntity;
-import com.example.kuby.utils.LocalDateTimeParser;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

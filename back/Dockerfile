@@ -20,13 +20,13 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
   mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 RUN mvn package -DskipTests
-RUN jar xvf target/jenkins_learn-0.0.1-SNAPSHOT.jar
+RUN jar xvf target/kuby-0.0.1-SNAPSHOT.jar
 RUN jdeps --ignore-missing-deps -q  \
     --recursive  \
     --multi-release 23  \
     --print-module-deps  \
     --class-path 'BOOT-INF/lib/*'  \
-    target/jenkins_learn-0.0.1-SNAPSHOT.jar > modules.txt
+    target/kuby-0.0.1-SNAPSHOT.jar > modules.txt
 
 # Build small JRE image
 RUN $JAVA_HOME/bin/jlink \
@@ -56,11 +56,11 @@ RUN addgroup --system $APPLICATION_USER &&  adduser --system $APPLICATION_USER -
 RUN mkdir /app && chown -R $APPLICATION_USER /app
 
 # Copy the JAR from the builder stage instead of from the host
-COPY --from=jre-builder --chown=$APPLICATION_USER:$APPLICATION_USER /opt/app/target/jenkins_learn-0.0.1-SNAPSHOT.jar /app/app.jar
+COPY --from=jre-builder --chown=$APPLICATION_USER:$APPLICATION_USER /opt/app/target/kuby-0.0.1-SNAPSHOT.jar /app/app.jar
 
 WORKDIR /app
 
 USER $APPLICATION_USER
 
-EXPOSE 8080
+EXPOSE 80
 ENTRYPOINT [ "java", "-jar", "/app/app.jar" ]
