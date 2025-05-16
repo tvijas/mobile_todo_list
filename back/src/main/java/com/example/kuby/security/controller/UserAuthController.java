@@ -1,6 +1,7 @@
 package com.example.kuby.security.controller;
 
 import com.example.kuby.exceptions.BasicException;
+import com.example.kuby.foruser.CustomUserPrincipal;
 import com.example.kuby.foruser.UserEntity;
 import com.example.kuby.security.models.enums.Provider;
 import com.example.kuby.security.models.request.LoginRequest;
@@ -57,7 +58,7 @@ public class UserAuthController {
     @WithRateLimitProtection
     public ResponseEntity<Void> login(@RequestBody @Valid LoginRequest request) {
 
-         UserEntity user = userAuthService.authenticate(request.getEmail(), request.getPassword(), Provider.LOCAL);
+        CustomUserPrincipal user = userAuthService.authenticate(request.getEmail(), request.getPassword(), Provider.LOCAL);
 
         TokenPair tokenPair = jwtGeneratorService.generateTokens(user);
 
@@ -68,7 +69,7 @@ public class UserAuthController {
     }
 
     @PostMapping("/token/refresh")
-    @WithRateLimitProtection
+//    @WithRateLimitProtection
     public ResponseEntity<Void> refreshTokens(@RequestHeader("X-Refresh-Token") String refreshToken,
                                               @RequestHeader("Authorization") String accessToken) {
         String parsedAccessToken = recoverToken(accessToken).orElseThrow(() ->
@@ -82,7 +83,7 @@ public class UserAuthController {
                 .header("X-Refresh-Token", tokenPair.getRefreshTokenValue())
                 .build();
     }
-//   w @PostMapping("/change-password")
+//    @PostMapping("/change-password")
 //    @WithRateLimitProtection
 //    public ResponseEntity<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
 //

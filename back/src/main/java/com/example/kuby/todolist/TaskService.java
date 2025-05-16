@@ -19,9 +19,16 @@ public class TaskService {
     private final TaskRepo taskRepo;
     private final Mapper mapper;
 
-    public TaskDTO create(String name, UUID userId, LocalDateTime deadLine, boolean isFinished) {
-        if (!deadLine.isAfter(LocalDateTime.now()))
+    public TaskDTO create(String name, UUID userId, LocalDateTime deadLine, boolean isFinished, LocalDateTime notificationDateTime) {
+        if (deadLine.isBefore(LocalDateTime.now()))
             throw new BasicException(Map.of("deadline", "Deadline cannot be before current time"), HttpStatus.BAD_REQUEST);
+
+        if (notificationDateTime != null) {
+            if (notificationDateTime.isAfter(deadLine))
+                throw new BasicException(Map.of("notificationDateTime", "Notification cannot be after deadline time"), HttpStatus.BAD_REQUEST);
+            else if (notificationDateTime.isBefore(LocalDateTime.now()))
+                throw new BasicException(Map.of("notificationDateTime", "Notification time cannot be before current time"), HttpStatus.BAD_REQUEST);
+        }
 
         return mapper.convertTaskToDTO(taskRepo.save(Task.builder()
                 .name(name)
@@ -30,6 +37,7 @@ public class TaskService {
                         .build())
                 .deadLine(deadLine)
                 .isFinished(isFinished)
+                .notificationDateTime(notificationDateTime)
                 .build()));
     }
 
@@ -41,7 +49,7 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskDTO update(UUID id, String name, LocalDateTime deadLine, UUID userId) {
+    public TaskDTO update(UUID id, String name, LocalDateTime deadLine, UUID userId, LocalDateTime notificationDateTime) {
         Task task = taskRepo.findByIdAndCreatorId(id, userId).orElseThrow(() ->
                 new BasicException(Map.of("id", "Task with such id not found"), HttpStatus.NOT_FOUND));
 
@@ -51,6 +59,12 @@ public class TaskService {
             if (!deadLine.isAfter(LocalDateTime.now()))
                 throw new BasicException(Map.of("deadline", "Deadline cannot be before current time"), HttpStatus.BAD_REQUEST);
             task.setDeadLine(deadLine);
+        }
+        if (notificationDateTime != null) {
+            if (notificationDateTime.isAfter(deadLine))
+                throw new BasicException(Map.of("notificationDateTime", "Notification time cannot be after deadline time"), HttpStatus.BAD_REQUEST);
+            else if (notificationDateTime.isBefore(LocalDateTime.now()))
+                throw new BasicException(Map.of("notificationDateTime", "Notification time cannot be before current time"), HttpStatus.BAD_REQUEST);
         }
 
         return mapper.convertTaskToDTO(taskRepo.save(task));

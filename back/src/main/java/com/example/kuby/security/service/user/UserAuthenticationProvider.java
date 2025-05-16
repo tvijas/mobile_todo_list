@@ -35,9 +35,8 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
         if (!user.isEnabled())
             throw new BasicException(Map.of("email", "Email is not verified"), HttpStatus.BAD_REQUEST);
 
-
         return new UsernamePasswordAuthenticationToken(
-                user,
+                user.getPrincipal(),
                 password,
                 user.getAuthorities()
         );

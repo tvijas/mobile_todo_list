@@ -8,6 +8,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.kuby.exceptions.BasicException;
+import com.example.kuby.foruser.CustomUserPrincipal;
 import com.example.kuby.foruser.UserEntity;
 import com.example.kuby.foruser.UserRepo;
 import com.example.kuby.security.models.entity.tokens.Tokens;
@@ -48,7 +49,7 @@ public class JwtGeneratorService {
     public JwtGeneratorService(@Value("${security.jwt.access.token.duration.minutes:15}") long accessDuration,
                                @Value("${security.jwt.access.token.duration.days:7}") int refreshDuration,
                                JwtValidatorService jwtValidatorService, JwtService jwtService, UserRepo userRepo, Algorithm algorithm) {
-        this.accessTokenDurationInSeconds = Duration.ofMinutes(accessDuration).toSeconds();
+        this.accessTokenDurationInSeconds = Duration.ofSeconds(accessDuration).toSeconds();
         this.refreshTokenDurationInSeconds = Duration.ofDays(refreshDuration).toSeconds();
         this.jwtValidatorService = jwtValidatorService;
         this.jwtService = jwtService;
@@ -86,7 +87,7 @@ public class JwtGeneratorService {
             Tokens tokens = jwtService.saveRefreshedTokenPair(expiresAt, Instant.now(), accessTokenExpiration, refreshTokenExpiration, user);
 
             String accessToken = regenerateAccessTokenWithNewExpiration(decodedAccessToken, accessTokenExpiration);
-            String refreshToken = generateBasicToken(user, tokens, TokenType.REFRESH, accessTokenExpiration);
+            String refreshToken = generateBasicToken(user, tokens, TokenType.REFRESH, refreshTokenExpiration);
             return new TokenPair(new AccessToken(accessToken), new RefreshToken(refreshToken));
         } catch (JWTCreationException exception) {
             throw new BasicException(
@@ -97,7 +98,9 @@ public class JwtGeneratorService {
     }
 
     @Transactional
-    public TokenPair generateTokens(UserEntity user) {
+    public TokenPair generateTokens(CustomUserPrincipal userPrincipal) {
+        UserEntity user = userRepo.findByEmailAndProvider(userPrincipal.email(),userPrincipal.provider())
+                .orElseThrow();
         try {
             Instant accessTokenExpiration = calculateExpirationInstantWithMicros(accessTokenDurationInSeconds);
             Instant refreshTokenExpiration = calculateExpirationInstantWithMicros(refreshTokenDurationInSeconds);

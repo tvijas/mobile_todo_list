@@ -28,11 +28,11 @@ public class JwtService {
         Tokens tokens = tokensRepo.findByUsers(users).orElseThrow(() ->
                 new BasicException(Map.of("user", "There are no linked tokens to you"), HttpStatus.NOT_FOUND));
 
-        if (tokens.getUpdatedAt().plusSeconds(60).toEpochMilli() > updatedAt.toEpochMilli())
-            throw new BasicException(Map.of("request","too many refresh requests"),HttpStatus.TOO_MANY_REQUESTS);
+//        if (tokens.getUpdatedAt().plusSeconds(60).toEpochMilli() > updatedAt.toEpochMilli())
+//            throw new BasicException(Map.of("request","too many refresh requests"),HttpStatus.TOO_MANY_REQUESTS);
 
-        if (!tokens.getRefreshToken().getExpiresAt().truncatedTo(ChronoUnit.SECONDS).equals(expiresAt))
-            throw new BasicException(Map.of("refresh_token", "Refresh Token was used! You can use refresh token only once."), HttpStatus.BAD_REQUEST);
+//        if (!tokens.getRefreshToken().getExpiresAt().truncatedTo(ChronoUnit.SECONDS).equals(expiresAt))
+//            throw new BasicException(Map.of("refresh_token", "Refresh Token was used! You can use refresh token only once."), HttpStatus.BAD_REQUEST);
 
         tokens.getAccessToken().setExpiresAt(access_expiration);
         tokens.getRefreshToken().setExpiresAt(refresh_expiration);

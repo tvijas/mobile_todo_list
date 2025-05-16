@@ -1,14 +1,13 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import AppNavigator from './src/navigation/AppNavigator';
+import { StatusBar } from 'react-native';
 import { AuthProvider } from './src/context/AuthContext';
+import AppNavigator from './src/navigation/AppNavigator';
 
-const App = () => {
+const App: React.FC = () => {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-      </NavigationContainer>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <AppNavigator />
     </AuthProvider>
   );
 };

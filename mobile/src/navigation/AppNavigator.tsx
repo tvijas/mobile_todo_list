@@ -1,60 +1,49 @@
-import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import { ActivityIndicator, View } from 'react-native';
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
-import AddProductScreen from '../screens/AddProductScreen';
-import ProductDetailsScreen from '../screens/ProductDetailScreen';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useAuth } from "../context/AuthContext";
+import AuthNavigator from "./AuthNavigator";
+import TestScreen from "../screens/TestScreen";
+import TodoListScreen from "../screens/TodoListScreen";
+import EditTodoScreen from "../screens/EditTodoScreen";
+import CreateTodoScreen from "../screens/CreateTodoScreen";
+import Loading from "../components/Loading";
+import { TodoProvider } from "../store/todoStore";
 
-export type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-  AddProduct: undefined;
-  ProductDetails: { productId: string };
+const Stack = createNativeStackNavigator();
+
+// Create a separate navigator for todo screens
+const TodoNavigator = () => {
+  return (
+    <TodoProvider>
+      <Stack.Navigator screenOptions={{ headerShown: true }}>
+        <Stack.Screen name="TodoList" component={TodoListScreen} options={{ title: "My Tasks" }} />
+        <Stack.Screen name="CreateTodo" component={CreateTodoScreen} options={{ title: "New Task" }} />
+        <Stack.Screen name="EditTodo" component={EditTodoScreen} options={{ title: "Edit Task" }} />
+        {/* <Stack.Screen name="TestScreen" component={TestScreen} /> */}
+      </Stack.Navigator>
+    </TodoProvider>
+  );
 };
 
-const Stack = createStackNavigator<RootStackParamList>();
+const AppNavigator: React.FC = () => {
+  const { state } = useAuth();
 
-const AppNavigator = () => {
-  const { isLoggedIn, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
+  if (state.isLoading) {
+    return <Loading message="Loading..." />;
   }
 
   return (
-    <Stack.Navigator>
-      {isLoggedIn ? (
-        <>
-          <Stack.Screen 
-            name="Home" 
-            component={HomeScreen} 
-            options={{ title: 'Lista zakupów' }} 
-          />
-          <Stack.Screen 
-            name="AddProduct" 
-            component={AddProductScreen} 
-            options={{ title: 'Dodaj produkt' }} 
-          />
-          <Stack.Screen 
-            name="ProductDetails" 
-            component={ProductDetailsScreen} 
-            options={{ title: 'Szczegóły produktu' }} 
-          />
-        </>
-      ) : (
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
-          options={{ headerShown: false }} 
-        />
-      )}
-    </Stack.Navigator>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {state.isAuthenticated ? (
+          <Stack.Screen name="TodoApp" component={TodoNavigator} />
+        ) : (
+          // User not authenticated - show auth screens
+          <Stack.Screen name="Auth" component={AuthNavigator} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 

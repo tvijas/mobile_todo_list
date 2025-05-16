@@ -30,7 +30,7 @@ public class UserService {
         userRepo.save(UserEntity.builder()
                 .email(email)
                 .password(encoder.encode(password))
-                .isEmailSubmitted(false)
+                .isEmailSubmitted(true)
                 .registrationDate(LocalDateTime.now())
                 .provider(Provider.LOCAL)
                 .roles(UserRole.USER)

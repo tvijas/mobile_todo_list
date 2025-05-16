@@ -19,4 +19,5 @@ public class CreateTaskRequest {
     private LocalDateTime deadLine;
     @NotNull
     private Boolean isFinished;
+    private LocalDateTime notificationDateTime;
 }

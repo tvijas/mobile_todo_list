@@ -31,4 +31,5 @@ public class Task {
     private boolean isFinished;
     @Column(nullable = false)
     private boolean isExpired;
+    private LocalDateTime notificationDateTime;
 }

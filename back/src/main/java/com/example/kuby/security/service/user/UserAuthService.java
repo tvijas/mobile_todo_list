@@ -28,7 +28,7 @@ public class UserAuthService {
     }
 
     @Transactional
-    public UserEntity authenticate(String email, String password, Provider provider) {
+    public CustomUserPrincipal authenticate(String email, String password, Provider provider) {
         CustomUserPrincipal customUserPrincipal = new CustomUserPrincipal(email, provider);
         UsernamePasswordAuthenticationToken usernamePassword = new UsernamePasswordAuthenticationToken(customUserPrincipal, password);
         Authentication authUser = authenticationManager.authenticate(usernamePassword);
@@ -39,6 +39,6 @@ public class UserAuthService {
         if (authUser instanceof CredentialsContainer container)
             container.eraseCredentials();
 
-        return (UserEntity) authUser.getPrincipal();
+        return (CustomUserPrincipal) authUser.getPrincipal();
     }
 }
