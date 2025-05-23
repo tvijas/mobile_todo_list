@@ -28,14 +28,14 @@ const LoginScreen: React.FC = () => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Очищаем ошибки при размонтировании компонента
   useEffect(() => {
     return () => {
+      console.log(state.error)
       clearError();
+      console.log(state.error)
     };
-  }, [clearError]);
+  }, [navigation]);
 
-  // Показываем ошибку аутентификации, если она есть
   useEffect(() => {
     if (state.error) {
       Alert.alert('Authentication Error', state.error);

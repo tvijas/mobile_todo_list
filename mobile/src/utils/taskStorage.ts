@@ -1,10 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Task, PendingChange } from '../types/task';
-// Keys for AsyncStorage
 const TASKS_STORAGE_KEY = '@todo_app:tasks';
 const PENDING_CHANGES_KEY = '@todo_app:pending_changes';
 
-// Task storage functions
 export const saveTasks = async (tasks: Task[]): Promise<void> => {
   try {
     await AsyncStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
@@ -24,7 +22,16 @@ export const getTasks = async (): Promise<Task[]> => {
   }
 };
 
-// Pending changes storage functions
+export const clearTasks = async (): Promise<void> => {
+try {
+    await AsyncStorage.removeItem(TASKS_STORAGE_KEY);
+    return;
+  } catch (error) {
+    console.error('Error clearing tasks from storage:', error);
+    return;
+  }  
+}
+
 export const savePendingChanges = async (changes: PendingChange[]): Promise<void> => {
   try {
     await AsyncStorage.setItem(PENDING_CHANGES_KEY, JSON.stringify(changes));
@@ -34,6 +41,15 @@ export const savePendingChanges = async (changes: PendingChange[]): Promise<void
   }
 };
 
+export const clearSavedPendingChanges = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(PENDING_CHANGES_KEY);
+    return;
+  } catch (error) {
+    console.error('Error clearing pending changes from storage:', error);
+    return;
+  }
+}
 export const getPendingChanges = async (): Promise<PendingChange[]> => {
   try {
     const changesJson = await AsyncStorage.getItem(PENDING_CHANGES_KEY);

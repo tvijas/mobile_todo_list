@@ -2,14 +2,12 @@ package com.example.kuby.todolist;
 
 import com.example.kuby.security.context.TokenClaimContext;
 import com.example.kuby.security.util.formaters.LocalDateTimeParser;
-import com.example.kuby.utils.LocalDateTimeFormatter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,12 +40,11 @@ public class TaskController {
                                           @RequestParam(required = false) String name,
                                           @RequestParam(required = false) String deadLine,
                                           @RequestParam(required = false) String notificationDateTime) {
-        System.out.println("hello");
         return ResponseEntity.ok(
                 taskService.update(UUID.fromString(id), name,
-                        LocalDateTimeParser.parse(deadLine),
+                        deadLine != null ? LocalDateTimeParser.parse(deadLine) : null,
                         TokenClaimContext.getIdByKey(USER_ID),
-                        LocalDateTimeParser.parse(notificationDateTime)
+                        notificationDateTime != null ? LocalDateTimeParser.parse(notificationDateTime) : null
                 )
         );
     }

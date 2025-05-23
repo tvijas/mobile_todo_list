@@ -1,4 +1,3 @@
-// src/utils/networkStatus.ts
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 
 class NetworkStatusManager {
@@ -6,10 +5,7 @@ class NetworkStatusManager {
   private isConnected: boolean = true;
 
   constructor() {
-    // Subscribe to network status changes
     NetInfo.addEventListener(this.handleNetInfoChange);
-    
-    // Initialize with current status
     this.initNetworkStatus();
   }
 
@@ -26,7 +22,6 @@ class NetworkStatusManager {
   private handleNetInfoChange = (state: NetInfoState) => {
     const newConnectionStatus = Boolean(state.isConnected);
     
-    // Only notify if status actually changed
     if (this.isConnected !== newConnectionStatus) {
       this.isConnected = newConnectionStatus;
       this.notifyListeners();
@@ -39,10 +34,8 @@ class NetworkStatusManager {
 
   public addListener(listener: (isConnected: boolean) => void) {
     this.listeners.push(listener);
-    // Immediately notify with current status
     listener(this.isConnected);
     
-    // Return function to remove listener
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
@@ -53,5 +46,4 @@ class NetworkStatusManager {
   }
 }
 
-// Export singleton instance
 export const networkStatus = new NetworkStatusManager();

@@ -16,6 +16,7 @@ public final class LocalDateTimeParser {
 
     public static LocalDateTime parse(String string) {
         try {
+            System.out.println("try to parse string: " + string);
             return LocalDateTime.parse(string, formatter);
         } catch (Exception ex) {
             throw new BasicException(Map.of("dateTime",

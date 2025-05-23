@@ -23,7 +23,7 @@ public class Task {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id",referencedColumnName = "id")
     private UserEntity creator;
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String name;
     @Column(nullable = false)
     private LocalDateTime deadLine;

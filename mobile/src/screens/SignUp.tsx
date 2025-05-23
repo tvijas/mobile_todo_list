@@ -30,25 +30,20 @@ const SignUpScreen: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
 
-  // Очищаем ошибки при размонтировании компонента
   useEffect(() => {
     return () => {
       clearError();
     };
   }, [clearError]);
 
-  // Показываем ошибку регистрации, если она есть
   useEffect(() => {
     if (state.error) {
       Alert.alert('Registration Error', state.error);
     }
   }, [state.error]);
 
-  // Если регистрация прошла успешно, перенаправляем на экран входа
   useEffect(() => {
     if (!state.isLoading && !state.error && state.isAuthenticated) {
-      // Это состояние может означать, что регистрация прошла успешно
-      // но пользователь еще не авторизован
       Alert.alert(
         'Registration Successful',
         'Your account has been created successfully. Please log in.',

@@ -4,23 +4,24 @@ export interface Task {
   id: UUID;
   creatorId: UUID;
   name: string;
-  deadLine: string; // ISO string format
+  deadLine: string; 
   isFinished: boolean;
   isExpired: boolean;
   notificationDateTime: string;
+  isSynced: boolean;
 }
 
 export interface CreateTaskRequest {
   name: string;
-  deadLine: string; // ISO string format
+  deadLine: string; 
   isFinished: boolean;
   notificationDateTime: string;
 }
 
 export interface UpdateTaskRequest {
   name?: string;
-  deadLine?: string; // ISO string format
-  notificationDateTime: string;
+  deadLine?: string; 
+  notificationDateTime?: string;
 }
 
 export interface TaskStore {
@@ -37,5 +38,6 @@ export interface PendingChange {
   type: PendingChangeType;
   taskId?: UUID;
   data?: CreateTaskRequest | UpdateTaskRequest;
+  tempTask?: Task; 
   timestamp: number;
 }

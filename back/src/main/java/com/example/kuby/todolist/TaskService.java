@@ -20,11 +20,13 @@ public class TaskService {
     private final Mapper mapper;
 
     public TaskDTO create(String name, UUID userId, LocalDateTime deadLine, boolean isFinished, LocalDateTime notificationDateTime) {
-        if (deadLine.isBefore(LocalDateTime.now()))
+        if (deadLine != null && deadLine.isBefore(LocalDateTime.now()))
             throw new BasicException(Map.of("deadline", "Deadline cannot be before current time"), HttpStatus.BAD_REQUEST);
 
+
+        System.out.println(LocalDateTime.now() + " ? " + notificationDateTime);
         if (notificationDateTime != null) {
-            if (notificationDateTime.isAfter(deadLine))
+            if (deadLine != null && notificationDateTime.isAfter(deadLine))
                 throw new BasicException(Map.of("notificationDateTime", "Notification cannot be after deadline time"), HttpStatus.BAD_REQUEST);
             else if (notificationDateTime.isBefore(LocalDateTime.now()))
                 throw new BasicException(Map.of("notificationDateTime", "Notification time cannot be before current time"), HttpStatus.BAD_REQUEST);

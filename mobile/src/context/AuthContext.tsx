@@ -3,6 +3,7 @@ import { AuthState, TokenPair } from '../types/auth';
 import { getTokens, removeTokens, saveTokens } from '../utils/authStorage';
 import { login as loginApi, register as registerApi, verifyToken, } from '../api/auth';
 import { LoginRequest, SignUpRequest } from '../types/auth';
+import { clearSavedPendingChanges, clearTasks } from '../utils/taskStorage';
 
 // Определение типов действий
 type AuthAction =
@@ -80,7 +81,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   }
 };
 
-// Определение типа контекста
 interface AuthContextType {
   state: AuthState;
   login: (data: LoginRequest) => Promise<void>;
@@ -89,20 +89,16 @@ interface AuthContextType {
   clearError: () => void;
 }
 
-// Создание контекста
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Провайдер контекста
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Восстановление токенов при загрузке приложения
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         const tokens = await getTokens();
         
-        // Если есть токены, проверяем их валидность
         if (tokens) {
           const isValid = await verifyToken();
           if (isValid) {
@@ -122,7 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     bootstrapAsync();
   }, []);
 
-  // Функция для входа
   const login = async (data: LoginRequest) => {
     dispatch({ type: 'LOGIN_REQUEST' });
     try {
@@ -138,7 +133,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Функция для регистрации
   const register = async (data: SignUpRequest) => {
     dispatch({ type: 'REGISTER_REQUEST' });
     try {
@@ -153,17 +147,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Функция для выхода
   const logout = async () => {
     try {
       await removeTokens();
+      await clearSavedPendingChanges();
+      await clearTasks();
       dispatch({ type: 'LOGOUT' });
     } catch (error) {
       console.error('Logout failed', error);
     }
   };
 
-  // Функция для очистки ошибок
   const clearError = () => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
@@ -179,7 +173,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={authContext}>{children}</AuthContext.Provider>;
 };
 
-// Хук для использования контекста
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {

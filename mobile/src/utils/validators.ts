@@ -31,34 +31,28 @@ export const validatePassword = (password: string): string | null => {
     return `Password must be less than ${MAX_SIZE} characters long`;
   }
   
-  // Проверка на наличие строчных букв
   if (!/[a-z]/.test(password)) {
     return 'Password must contain at least one lowercase letter';
   }
   
-  // Проверка на наличие заглавных букв
   if (!/[A-Z]/.test(password)) {
     return 'Password must contain at least one uppercase letter';
   }
   
-  // Проверка на наличие цифр
   if (!/[0-9]/.test(password)) {
     return 'Password must contain at least one number';
   }
   
-  // Проверка на наличие специальных символов
   const specialCharsRegex = new RegExp(`[${SPECIAL_CHARS}]`);
   if (!specialCharsRegex.test(password)) {
     return `Password must contain at least one special character (${SPECIAL_CHARS})`;
   }
   
-  // Проверка на допустимые символы
   const allowedCharsRegex = /^[a-zA-Z0-9@$!%*?&_-]+$/;
   if (!allowedCharsRegex.test(password)) {
     return 'Password contains invalid characters';
   }
   
-  // Проверка на повторяющиеся символы
   for (let i = 0; i < password.length - 2; i++) {
     if (password[i] === password[i + 1] && password[i] === password[i + 2]) {
       return 'Password should not contain repeated characters';

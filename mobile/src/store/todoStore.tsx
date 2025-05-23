@@ -1,117 +1,26 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { Task, TaskStore, CreateTaskRequest, UpdateTaskRequest, PendingChange } from '../types/task';
-import { taskApi } from '../api/tasks';
-import { saveTasks, getTasks, savePendingChanges, getPendingChanges } from '../utils/taskStorage';
-import { networkStatus } from '../utils/networkStatus';
-import uuid from 'react-native-uuid';
-import { useAuth } from '../context/AuthContext';
-import { UUID } from '../types/common';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import {
+  Task,
+  TaskStore,
+  CreateTaskRequest,
+  UpdateTaskRequest,
+  PendingChange,
+} from "../types/task";
+import { taskApi } from "../api/tasks";
+import {
+  saveTasks,
+  getTasks,
+  savePendingChanges,
+  getPendingChanges,
+  clearSavedPendingChanges,
+} from "../utils/taskStorage";
+import { networkStatus } from "../utils/networkStatus";
+import uuid from "react-native-uuid";
+import { useAuth } from "../context/AuthContext";
+import { UUID } from "../types/common";
+import NotificationService from "../services/NotificationService";
+import { updateTaskNotification, updateAllNotifications, cancelTaskNotification } from "../utils/notificationUtils";
 
-// Action types
-type TodoAction =
-  | { type: 'FETCH_TASKS_REQUEST' }
-  | { type: 'FETCH_TASKS_SUCCESS'; payload: Task[] }
-  | { type: 'FETCH_TASKS_FAILURE'; payload: string }
-  | { type: 'CREATE_TASK_REQUEST' }
-  | { type: 'CREATE_TASK_SUCCESS'; payload: Task }
-  | { type: 'CREATE_TASK_FAILURE'; payload: string }
-  | { type: 'UPDATE_TASK_REQUEST' }
-  | { type: 'UPDATE_TASK_SUCCESS'; payload: Task }
-  | { type: 'UPDATE_TASK_FAILURE'; payload: string }
-  | { type: 'FINISH_TASK_REQUEST' }
-  | { type: 'FINISH_TASK_SUCCESS'; payload: Task }
-  | { type: 'FINISH_TASK_FAILURE'; payload: string }
-  | { type: 'DELETE_TASK_REQUEST' }
-  | { type: 'DELETE_TASK_SUCCESS'; payload: string } // task id
-  | { type: 'DELETE_TASK_FAILURE'; payload: string }
-  | { type: 'SET_NETWORK_STATUS'; payload: boolean }
-  | { type: 'ADD_PENDING_CHANGE'; payload: PendingChange }
-  | { type: 'REMOVE_PENDING_CHANGE'; payload: number } // timestamp
-  | { type: 'RESET_ERROR' }
-  | { type: 'RESTORE_STATE'; payload: Partial<TaskStore> };
-
-// Initial state
-const initialState: TaskStore = {
-  tasks: [],
-  isLoading: false,
-  error: null,
-  isOffline: false,
-  pendingChanges: [],
-};
-
-// Reducer
-const todoReducer = (state: TaskStore, action: TodoAction): TaskStore => {
-  switch (action.type) {
-    case 'FETCH_TASKS_REQUEST':
-    case 'CREATE_TASK_REQUEST':
-    case 'UPDATE_TASK_REQUEST':
-    case 'FINISH_TASK_REQUEST':
-    case 'DELETE_TASK_REQUEST':
-      return { ...state, isLoading: true, error: null };
-
-    case 'FETCH_TASKS_SUCCESS':
-      return { ...state, isLoading: false, tasks: action.payload };
-
-    case 'CREATE_TASK_SUCCESS':
-      return {
-        ...state,
-        isLoading: false,
-        tasks: [...state.tasks, action.payload],
-      };
-
-    case 'UPDATE_TASK_SUCCESS':
-    case 'FINISH_TASK_SUCCESS':
-      return {
-        ...state,
-        isLoading: false,
-        tasks: state.tasks.map(task => 
-          task.id === action.payload.id ? action.payload : task
-        ),
-      };
-
-    case 'DELETE_TASK_SUCCESS':
-      return {
-        ...state,
-        isLoading: false,
-        tasks: state.tasks.filter(task => task.id !== action.payload),
-      };
-
-    case 'FETCH_TASKS_FAILURE':
-    case 'CREATE_TASK_FAILURE':
-    case 'UPDATE_TASK_FAILURE':
-    case 'FINISH_TASK_FAILURE':
-    case 'DELETE_TASK_FAILURE':
-      return { ...state, isLoading: false, error: action.payload };
-
-    case 'SET_NETWORK_STATUS':
-      return { ...state, isOffline: !action.payload };
-
-    case 'ADD_PENDING_CHANGE':
-      return {
-        ...state,
-        pendingChanges: [...state.pendingChanges, action.payload],
-      };
-
-    case 'REMOVE_PENDING_CHANGE':
-      return {
-        ...state,
-        pendingChanges: state.pendingChanges.filter(
-          change => change.timestamp !== action.payload
-        ),
-      };
-
-    case 'RESET_ERROR':
-      return { ...state, error: null };
-
-    case 'RESTORE_STATE':
-      return { ...state, ...action.payload };
-
-    default:
-      return state;
-  }
-};
-
-// Context
 interface TodoContextValue {
   state: TaskStore;
   fetchTasks: () => Promise<void>;
@@ -125,30 +34,37 @@ interface TodoContextValue {
 
 const TodoContext = createContext<TodoContextValue | undefined>(undefined);
 
-// Provider
-export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(todoReducer, initialState);
+export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState<boolean>(
+    !networkStatus.getConnectionStatus()
+  );
+  const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
+
   const { state: authState } = useAuth();
 
-  // Load tasks and pending changes from storage
+  // Initialize data and notifications
   useEffect(() => {
     const loadInitialData = async () => {
       try {
+        await NotificationService.initialize();
+        
         const [storedTasks, storedChanges] = await Promise.all([
           getTasks(),
           getPendingChanges(),
         ]);
+
+        setTasks(storedTasks);
+        setPendingChanges(storedChanges);
+        setIsOffline(!networkStatus.getConnectionStatus());
         
-        dispatch({
-          type: 'RESTORE_STATE',
-          payload: {
-            tasks: storedTasks,
-            pendingChanges: storedChanges,
-            isOffline: !networkStatus.getConnectionStatus(),
-          },
-        });
+        await updateAllNotifications();
       } catch (error) {
-        console.error('Failed to load initial data:', error);
+        console.error("Failed to load initial data:", error);
       }
     };
 
@@ -157,288 +73,463 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [authState.isAuthenticated]);
 
-  // Save tasks to storage whenever they change
+  // Save tasks to storage when they change
   useEffect(() => {
-    if (state.tasks.length > 0) {
-      saveTasks(state.tasks);
+    if (tasks.length > 0) {
+      saveTasks(tasks);
     }
-  }, [state.tasks]);
+  }, [tasks]);
 
-  // Save pending changes to storage whenever they change
+  // Save pending changes to storage when they change
   useEffect(() => {
-    if (state.pendingChanges.length > 0) {
-      savePendingChanges(state.pendingChanges);
-    }
-  }, [state.pendingChanges]);
+    savePendingChanges(pendingChanges);
+  }, [pendingChanges]);
 
-  // Network status monitoring
+  // Monitor network status
   useEffect(() => {
     const unsubscribe = networkStatus.addListener((isConnected) => {
-      dispatch({ type: 'SET_NETWORK_STATUS', payload: isConnected });
-      
+      setIsOffline(!isConnected);
+
       // Try to sync if we're back online
-      if (isConnected && state.pendingChanges.length > 0) {
+      if (isConnected && pendingChanges.length > 0) {
         syncPendingChanges();
       }
     });
 
     return unsubscribe;
-  }, [state.pendingChanges]);
+  }, [pendingChanges]);
 
   // Fetch tasks
   const fetchTasks = async () => {
     if (!authState.isAuthenticated) return;
-    
-    dispatch({ type: 'FETCH_TASKS_REQUEST' });
-    
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      if (state.isOffline) {
+      if (isOffline) {
         // Use cached tasks in offline mode
         const cachedTasks = await getTasks();
-        dispatch({ type: 'FETCH_TASKS_SUCCESS', payload: cachedTasks });
+        setTasks(cachedTasks);
       } else {
         // Fetch from API when online
-        const tasks = await taskApi.getAll();
-        dispatch({ type: 'FETCH_TASKS_SUCCESS', payload: tasks });
+        const fetchedTasks = await taskApi.getAll();
+        setTasks(fetchedTasks);
+        (await getTasks()).forEach(task => console.log("Task setted in localstore after fetch: " + task.id + " is synced: " + task.isSynced));
         // Update cache
-        await saveTasks(tasks);
+        await saveTasks(fetchedTasks);
+        
+        // Перепланируем уведомления после обновления задач
+        await updateAllNotifications();
       }
     } catch (error) {
-      console.error('Failed to fetch tasks:', error);
-      dispatch({
-        type: 'FETCH_TASKS_FAILURE',
-        payload: 'Failed to fetch tasks. Please try again.',
-      });
-      
+      console.error("Failed to fetch tasks:", error);
+      setError("Failed to fetch tasks. Please try again.");
+
       // Fall back to cached tasks
       try {
         const cachedTasks = await getTasks();
         if (cachedTasks.length > 0) {
-          dispatch({ type: 'FETCH_TASKS_SUCCESS', payload: cachedTasks });
+          setTasks(cachedTasks);
         }
       } catch (cacheError) {
-        console.error('Failed to get cached tasks:', cacheError);
+        console.error("Failed to get cached tasks:", cacheError);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Create task
   const createTask = async (task: CreateTaskRequest) => {
-    dispatch({ type: 'CREATE_TASK_REQUEST' });
-    
+    setIsLoading(true);
+    setError(null);
+
     try {
-      if (state.isOffline) {
+      if (isOffline) {
         // Create temporary task in offline mode
         const tempTask: Task = {
           id: uuid.v4() as UUID,
-          creatorId: (authState.accessToken || 'offline-user') as string,
+          creatorId: (authState.accessToken || "offline-user") as string,
           name: task.name,
           deadLine: task.deadLine,
-          isFinished: task.isFinished,
+          isFinished: task.isFinished || false,
           isExpired: false,
-          notificationDateTime: task.notificationDateTime
+          notificationDateTime: task.notificationDateTime,
+          isSynced: false,
         };
-        
-        dispatch({ type: 'CREATE_TASK_SUCCESS', payload: tempTask });
-        
+
+        setTasks((currentTasks) => [...currentTasks, tempTask]);
+
         // Add to pending changes
         const pendingChange: PendingChange = {
-          type: 'create',
+          type: "create",
+          taskId: tempTask.id,
           data: task,
+          tempTask: tempTask,
           timestamp: Date.now(),
         };
+
+        setPendingChanges((current) => [...current, pendingChange]);
         
-        dispatch({ type: 'ADD_PENDING_CHANGE', payload: pendingChange });
+        if (task.notificationDateTime) {
+          await NotificationService.scheduleTaskNotification(tempTask);
+        }
       } else {
         // Create task via API when online
         const newTask = await taskApi.create(task);
-        dispatch({ type: 'CREATE_TASK_SUCCESS', payload: newTask });
+        setTasks((currentTasks) => [...currentTasks, newTask]);
+        
+        if (task.notificationDateTime) {
+          await NotificationService.scheduleTaskNotification(newTask);
+        }
       }
     } catch (error) {
-      console.error('Failed to create task:', error);
-      dispatch({
-        type: 'CREATE_TASK_FAILURE',
-        payload: 'Failed to create task. Please try again.',
-      });
+      console.error("Failed to create task:", error);
+      setError("Failed to create task. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Update task
   const updateTask = async (id: string, taskUpdate: UpdateTaskRequest) => {
-    dispatch({ type: 'UPDATE_TASK_REQUEST' });
-    
+    setIsLoading(true);
+    setError(null);
+
     try {
-      if (state.isOffline) {
+      if (isOffline) {
         // Update task locally in offline mode
-        const taskToUpdate = state.tasks.find(task => task.id === id);
-        
-        if (taskToUpdate) {
-          const updatedTask: Task = {
-            ...taskToUpdate,
-            name: taskUpdate.name || taskToUpdate.name,
-            deadLine: taskUpdate.deadLine || taskToUpdate.deadLine,
-          };
+        setTasks((currentTasks) =>
+          currentTasks.map((task) =>
+            task.id === id && !task.isSynced
+              ? {
+                  ...task,
+                  name: taskUpdate.name || task.name,
+                  deadLine: taskUpdate.deadLine || task.deadLine,
+                  notificationDateTime:
+                    taskUpdate.notificationDateTime ||
+                    task.notificationDateTime,
+                }
+              : task
+          )
+        );
+        const optionalCreatePendingChange = pendingChanges.find(
+          (pendingChange) =>
+            pendingChange.taskId === id &&
+            pendingChange.type === "create" &&
+            !pendingChange.tempTask.isSynced
+        );
+        if (optionalCreatePendingChange) {
+          console.log("pass");
+          setPendingChanges((pendingChanges) =>
+            pendingChanges.map((change) =>
+              change === optionalCreatePendingChange
+                ? {
+                    ...change,
+                    type: "create",
+                    data: {
+                      ...change.data,
+                      name: taskUpdate.name || change.tempTask.name,
+                      deadLine: taskUpdate.deadLine || change.tempTask.deadLine,
+                      notificationDateTime:
+                        taskUpdate.notificationDateTime ||
+                        change.tempTask.notificationDateTime,
+                    },
+                    tempTask: {
+                      ...change.tempTask,
+                      name: taskUpdate.name || change.tempTask.name,
+                      deadLine: taskUpdate.deadLine || change.tempTask.deadLine,
+                      notificationDateTime:
+                        taskUpdate.notificationDateTime ||
+                        change.tempTask.notificationDateTime,
+                    },
+                  }
+                : change
+            )
+          );
           
-          dispatch({ type: 'UPDATE_TASK_SUCCESS', payload: updatedTask });
+          if (taskUpdate.notificationDateTime) {
+            const updatedTask = tasks.find(task => task.id === id);
+            if (updatedTask) {
+              await updateTaskNotification(id);
+            }
+          }
           
+          return;
+        }
           // Add to pending changes
           const pendingChange: PendingChange = {
-            type: 'update',
-            taskId: id as string,
+            type: "update",
+            taskId: id,
             data: taskUpdate,
             timestamp: Date.now(),
           };
+
+          setPendingChanges((current) => [...current, pendingChange]);
           
-          dispatch({ type: 'ADD_PENDING_CHANGE', payload: pendingChange });
-        } else {
-          throw new Error('Task not found');
-        }
+          if (taskUpdate.notificationDateTime) {
+            await updateTaskNotification(id);
+          }
       } else {
-        // Update via API when online
-        const updatedTask = await taskApi.update(id as string, taskUpdate);
-        dispatch({ type: 'UPDATE_TASK_SUCCESS', payload: updatedTask });
+        const optionalTask = tasks.find(
+          (task) => task.id === id && task.isSynced
+        );
+
+        if (!optionalTask) {
+          setError("Failed to update task. Please try again.");
+          return;
+        }
+
+        console.log('found');
+
+        const updatedTask = await taskApi.update(id, taskUpdate);
+
+        console.log("updated task: " + updatedTask)
+
+        setTasks((current) =>
+          current.map((task) =>
+            task.id === id ? { ...task, ...updatedTask } : task
+          )
+        );
+        
+        await updateTaskNotification(id);
       }
     } catch (error) {
-      console.error('Failed to update task:', error);
-      dispatch({
-        type: 'UPDATE_TASK_FAILURE',
-        payload: 'Failed to update task. Please try again.',
-      });
+      console.error("Failed to update task:", error);
+      setError("Failed to update this task");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Finish task
   const finishTask = async (id: string) => {
-    dispatch({ type: 'FINISH_TASK_REQUEST' });
-    
+    setIsLoading(true);
+    setError(null);
+
     try {
-      if (state.isOffline) {
-        // Update task locally in offline mode
-        const taskToFinish = state.tasks.find(task => task.id === id);
+      if (isOffline) {
+        // Mark task as finished locally
+        setTasks((currentTasks) =>
+          currentTasks.map((task) =>
+            task.id === id ? { ...task, isFinished: true } : task
+          )
+        );
+
+        // Add to pending changes
+        const pendingChange: PendingChange = {
+          type: "finish",
+          taskId: id,
+          timestamp: Date.now(),
+        };
+
+        setPendingChanges((current) => [...current, pendingChange]);
         
-        if (taskToFinish) {
-          const finishedTask: Task = {
-            ...taskToFinish,
-            isFinished: true,
-          };
-          
-          dispatch({ type: 'FINISH_TASK_SUCCESS', payload: finishedTask });
-          
-          // Add to pending changes
-          const pendingChange: PendingChange = {
-            type: 'finish',
-            taskId: id as string,
-            timestamp: Date.now(),
-          };
-          
-          dispatch({ type: 'ADD_PENDING_CHANGE', payload: pendingChange });
-        } else {
-          throw new Error('Task not found');
-        }
+        await cancelTaskNotification(id);
       } else {
+        const optionalTask = tasks.find(
+          (task) => task.id === id && task.isSynced
+        );
+
+        if (!optionalTask) {
+          setError("Task is not synced. Try sync before doing any changes");
+          return;
+        }
         // Finish via API when online
-        const finishedTask = await taskApi.finish(id as string);
-        dispatch({ type: 'FINISH_TASK_SUCCESS', payload: finishedTask });
+        const finishedTask = await taskApi.finish(id);
+        setTasks((currentTasks) =>
+          currentTasks.map((task) => (task.id === id ? finishedTask : task))
+        );
+        
+        await cancelTaskNotification(id);
       }
     } catch (error) {
-      console.error('Failed to finish task:', error);
-      dispatch({
-        type: 'FINISH_TASK_FAILURE',
-        payload: 'Failed to mark task as finished. Please try again.',
-      });
+      console.error("Failed to finish task:", error);
+      setError("Failed to mark task as finished. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Delete task
   const deleteTask = async (id: string) => {
-    dispatch({ type: 'DELETE_TASK_REQUEST' });
-    
+    setIsLoading(true);
+    setError(null);
+
     try {
-      if (state.isOffline) {
-        // Delete locally in offline mode
-        dispatch({ type: 'DELETE_TASK_SUCCESS', payload: id });
-        
+      if (isOffline) {
+        // Remove task locally
+        setTasks((currentTasks) =>
+          currentTasks.filter((task) => task.id !== id)
+        );
+
         // Add to pending changes
         const pendingChange: PendingChange = {
-          type: 'delete',
-          taskId: id as string,
+          type: "delete",
+          taskId: id,
           timestamp: Date.now(),
         };
+
+        setPendingChanges((current) => [...current, pendingChange]);
         
-        dispatch({ type: 'ADD_PENDING_CHANGE', payload: pendingChange });
+        await cancelTaskNotification(id);
       } else {
+        const optionalTask = tasks.find(
+          (task) => task.id === id && task.isSynced
+        );
+
+        if (!optionalTask) {
+          setError("Task is not synced. Try sync before doing any changes");
+          return;
+        }
         // Delete via API when online
-        await taskApi.delete(id as string);
-        dispatch({ type: 'DELETE_TASK_SUCCESS', payload: id });
+        await taskApi.delete(id);
+        setTasks((currentTasks) =>
+          currentTasks.filter((task) => task.id !== id)
+        );
+        
+        await cancelTaskNotification(id);
       }
     } catch (error) {
-      console.error('Failed to delete task:', error);
-      dispatch({
-        type: 'DELETE_TASK_FAILURE',
-        payload: 'Failed to delete task. Please try again.',
-      });
+      console.error("Failed to delete task:", error);
+      setError("Failed to delete task. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Reset error
   const resetError = () => {
-    dispatch({ type: 'RESET_ERROR' });
+    setError(null);
   };
 
   // Sync pending changes when back online
-  const syncPendingChanges = useCallback(async () => {
-    if (state.isOffline || state.pendingChanges.length === 0) {
+  const syncPendingChanges = async () => {
+    if (isOffline || pendingChanges.length === 0) {
       return;
     }
-    
-    // Sort changes by timestamp (oldest first)
-    const sortedChanges = [...state.pendingChanges].sort(
-      (a, b) => a.timestamp - b.timestamp
-    );
-    
-    for (const change of sortedChanges) {
-      try {
-        switch (change.type) {
-          case 'create':
-            if (change.data) {
-              await taskApi.create(change.data as CreateTaskRequest);
-            }
-            break;
-            
-          case 'update':
-            if (change.taskId && change.data) {
-              await taskApi.update(
-                change.taskId as string,
-                change.data as UpdateTaskRequest
-              );
-            }
-            break;
-            
-          case 'finish':
-            if (change.taskId) {
-              await taskApi.finish(change.taskId as string);
-            }
-            break;
-            
-          case 'delete':
-            if (change.taskId) {
-              await taskApi.delete(change.taskId as string);
-            }
-            break;
-        }
-        
-        // Remove processed change
-        dispatch({ type: 'REMOVE_PENDING_CHANGE', payload: change.timestamp });
-      } catch (error) {
-        console.error(`Failed to sync ${change.type} operation:`, error);
-      }
-    }
-    
-    // Refresh tasks after sync
-    await fetchTasks();
-  }, [state.isOffline, state.pendingChanges]);
 
-  // Context value
+    setIsLoading(true);
+
+    try {
+      const taskMap = new Map();
+
+      pendingChanges.forEach((change) => {
+        const taskId =
+          change.taskId ||
+          (change.type === "create" && change.tempTask
+            ? change.tempTask.id
+            : undefined);
+
+        if (!taskId) return;
+
+        const taskInfo = taskMap.get(taskId) || {
+          finalAction: null,
+          task: null,
+          tempTask: null,
+          createData: null,
+          timestamp: 0,
+        };
+
+        if (change.timestamp > taskInfo.timestamp) {
+          taskInfo.finalAction = change.type;
+          taskInfo.timestamp = change.timestamp;
+
+          if (change.type === "create" && change.tempTask) {
+            taskInfo.tempTask = change.tempTask;
+            taskInfo.createData = change.data;
+          // } 
+          // else if (change.type === "delete") {
+            // Mark for deletion
+          } else {
+            // For updates and finish, we need the current task state
+            taskInfo.task = tasks.find((t) => t.id === taskId);
+          }
+        }
+
+        taskMap.set(taskId, taskInfo);
+      });
+
+      for (const [taskId, taskInfo] of taskMap.entries()) {
+        try {
+          if (taskInfo.finalAction === "delete") {
+            const wasCreatedOffline = pendingChanges.some(
+              (change) =>
+                change.type === "create" &&
+                ((change.tempTask && change.tempTask.id === taskId) ||
+                  change.taskId === taskId)
+            );
+
+            if (!wasCreatedOffline) {
+              // If it was an existing task, delete it on the server
+              await taskApi.delete(taskId);
+            }
+            
+            await cancelTaskNotification(taskId);
+          } else if (taskInfo.finalAction === "create" && taskInfo.createData) {
+            // Create the task on the server
+            console.log("CREATE SYNC: " + pendingChanges);
+            const newTask = await taskApi.create(taskInfo.createData);
+            
+            if (taskInfo.tempTask && taskInfo.tempTask.notificationDateTime) {
+              await cancelTaskNotification(taskId);
+              await NotificationService.scheduleTaskNotification(newTask);
+            }
+          } else if (taskInfo.task) {
+            // Handle updates and finishes
+            if (taskInfo.finalAction === "finish") {
+              await taskApi.finish(taskId);
+              await cancelTaskNotification(taskId);
+            } else if (taskInfo.finalAction === "update") {
+              console.log("UPDATE SYNC: " + pendingChanges);
+              // Find the most recent update data
+              const latestUpdate = [...pendingChanges]
+                .filter(
+                  (change) =>
+                    change.type === "update" &&
+                    (change.taskId === taskId ||
+                      (change.tempTask && change.tempTask.id === taskId))
+                )
+                .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+              if (latestUpdate && latestUpdate.data) {
+                const updatedTask = await taskApi.update(taskId, latestUpdate.data);
+                if (updatedTask.notificationDateTime) {
+                  await updateTaskNotification(taskId);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to sync task ${taskId}:`, error);
+        }
+      }
+
+      // Clear all pending changes
+      setPendingChanges([]);
+      clearSavedPendingChanges();
+
+      // Refresh tasks from server
+      await fetchTasks();
+      
+      await updateAllNotifications();
+    } catch (error) {
+      console.error("Failed to sync tasks:", error);
+      setError("Failed to sync tasks. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create the context value object
+  const state: TaskStore = {
+    tasks,
+    isLoading,
+    error,
+    isOffline,
+    pendingChanges,
+  };
+
   const contextValue: TodoContextValue = {
     state,
     fetchTasks,
@@ -451,19 +542,16 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <TodoContext.Provider value={contextValue}>
-      {children}
-    </TodoContext.Provider>
+    <TodoContext.Provider value={contextValue}>{children}</TodoContext.Provider>
   );
 };
 
-// Hook
 export const useTodo = (): TodoContextValue => {
   const context = useContext(TodoContext);
-  
+
   if (context === undefined) {
-    throw new Error('useTodo must be used within a TodoProvider');
+    throw new Error("useTodo must be used within a TodoProvider");
   }
-  
+
   return context;
 };

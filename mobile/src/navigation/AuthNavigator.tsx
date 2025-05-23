@@ -1,4 +1,3 @@
-// src/navigation/AuthNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/Login';
@@ -16,14 +15,7 @@ const AuthNavigator: React.FC = () => {
     <Stack.Navigator 
       initialRouteName="Login"
       screenOptions={{
-        headerShown: true,
-        // headerBackTitleVisible: false,
-        headerStyle: {
-          backgroundColor: '#f9f9f9',
-        },
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        headerShown: false,
       }}
     >
       <Stack.Screen 

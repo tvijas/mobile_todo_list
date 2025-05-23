@@ -11,6 +11,7 @@ public class TaskDTO {
     private UUID creatorId;
     private String name;
     private LocalDateTime deadLine;
+    private LocalDateTime notificationDateTime;
     private Boolean isFinished;
     private Boolean isExpired;
 }

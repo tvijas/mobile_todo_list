@@ -1,4 +1,3 @@
-// src/screens/EditTodoScreen.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';

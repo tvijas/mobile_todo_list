@@ -30,6 +30,7 @@ public class MapperConfig {
                 .addMappings(mapping -> {
                     mapping.map(Task::getCreator, TaskDTO::setCreatorId);
                     mapping.map(Task::getDeadLine, TaskDTO::setDeadLine);
+                    mapping.map(Task::getNotificationDateTime, TaskDTO::setNotificationDateTime);
                 });
         mapper.createTypeMap(UserEntity.class, UUID.class)
                 .setConverter(context -> context.getSource() == null ? null : context.getSource().getId());

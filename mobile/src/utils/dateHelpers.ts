@@ -12,6 +12,13 @@ export const formatDateTime = (dateTimeStr: string | null | undefined): string =
   }
 };
 
+export const formatDateToRequiredString = (date: Date): string => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+         `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 export const formatDateTimeForForm = (dateTimeStr: string | null | undefined): string => {
   if (!dateTimeStr) return '';
   
@@ -22,6 +29,13 @@ export const formatDateTimeForForm = (dateTimeStr: string | null | undefined): s
     console.error('Date formatting error:', error);
     return '';
   }
+};
+
+export const formatDateForApi = (date: Date | string): string => {
+  if (typeof date === "string") {
+    return date;
+  }
+  return format(date, "yyyy-MM-dd HH:mm:ss");
 };
 
 export const isTaskExpired = (deadLine: string | null | undefined): boolean => {
