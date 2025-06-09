@@ -49,7 +49,7 @@ public class JwtGeneratorService {
     public JwtGeneratorService(@Value("${security.jwt.access.token.duration.minutes:15}") long accessDuration,
                                @Value("${security.jwt.access.token.duration.days:7}") int refreshDuration,
                                JwtValidatorService jwtValidatorService, JwtService jwtService, UserRepo userRepo, Algorithm algorithm) {
-        this.accessTokenDurationInSeconds = Duration.ofSeconds(accessDuration).toSeconds();
+        this.accessTokenDurationInSeconds = Duration.ofMinutes(accessDuration).toMinutes();
         this.refreshTokenDurationInSeconds = Duration.ofDays(refreshDuration).toSeconds();
         this.jwtValidatorService = jwtValidatorService;
         this.jwtService = jwtService;

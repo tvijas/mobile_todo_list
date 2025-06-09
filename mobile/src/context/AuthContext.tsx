@@ -84,7 +84,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 interface AuthContextType {
   state: AuthState;
   login: (data: LoginRequest) => Promise<void>;
-  register: (data: SignUpRequest) => Promise<void>;
+  register: (data: SignUpRequest) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -138,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await registerApi(data);
       dispatch({ type: 'REGISTER_SUCCESS' });
+      return true;
     } catch (error) {
       let errorMessage = 'Registration failed. Please try again.';
       if (error instanceof Error) {

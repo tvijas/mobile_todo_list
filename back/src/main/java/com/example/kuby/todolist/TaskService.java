@@ -23,8 +23,6 @@ public class TaskService {
         if (deadLine != null && deadLine.isBefore(LocalDateTime.now()))
             throw new BasicException(Map.of("deadline", "Deadline cannot be before current time"), HttpStatus.BAD_REQUEST);
 
-
-        System.out.println(LocalDateTime.now() + " ? " + notificationDateTime);
         if (notificationDateTime != null) {
             if (deadLine != null && notificationDateTime.isAfter(deadLine))
                 throw new BasicException(Map.of("notificationDateTime", "Notification cannot be after deadline time"), HttpStatus.BAD_REQUEST);

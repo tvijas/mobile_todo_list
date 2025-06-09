@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequ
 import { getTokens, saveTokens, removeTokens } from '../utils/authStorage';
 import { TokenPair } from '../types/auth';
 
-const API_URL = 'https://e9f5-83-6-9-20.ngrok-free.app';
+const API_URL = 'https://b936-79-184-173-28.ngrok-free.app';
 
 const apiClient = axios.create({
   baseURL: API_URL,

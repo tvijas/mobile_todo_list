@@ -90,7 +90,6 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubscribe = networkStatus.addListener((isConnected) => {
       setIsOffline(!isConnected);
 
-      // Try to sync if we're back online
       if (isConnected && pendingChanges.length > 0) {
         syncPendingChanges();
       }
@@ -438,9 +437,6 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({
           if (change.type === "create" && change.tempTask) {
             taskInfo.tempTask = change.tempTask;
             taskInfo.createData = change.data;
-          // } 
-          // else if (change.type === "delete") {
-            // Mark for deletion
           } else {
             // For updates and finish, we need the current task state
             taskInfo.task = tasks.find((t) => t.id === taskId);
@@ -453,17 +449,17 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({
       for (const [taskId, taskInfo] of taskMap.entries()) {
         try {
           if (taskInfo.finalAction === "delete") {
-            const wasCreatedOffline = pendingChanges.some(
-              (change) =>
-                change.type === "create" &&
-                ((change.tempTask && change.tempTask.id === taskId) ||
-                  change.taskId === taskId)
-            );
+            // const wasCreatedOffline = pendingChanges.some(
+            //   (change) =>
+            //     change.type === "create" &&
+            //     ((change.tempTask && change.tempTask.id === taskId) ||
+            //       change.taskId === taskId)
+            // );
 
-            if (!wasCreatedOffline) {
+            // if (!wasCreatedOffline) {
               // If it was an existing task, delete it on the server
               await taskApi.delete(taskId);
-            }
+            // }
             
             await cancelTaskNotification(taskId);
           } else if (taskInfo.finalAction === "create" && taskInfo.createData) {

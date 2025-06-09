@@ -34,7 +34,7 @@ const SignUpScreen: React.FC = () => {
     return () => {
       clearError();
     };
-  }, [clearError]);
+  }, []);
 
   useEffect(() => {
     if (state.error) {
@@ -70,7 +70,9 @@ const SignUpScreen: React.FC = () => {
 
   const handleRegister = async () => {
     if (validateForm()) {
-      await register({ email, password });
+      if(await register({ email, password })){
+        navigateToLogin()
+      }
     }
   };
 
